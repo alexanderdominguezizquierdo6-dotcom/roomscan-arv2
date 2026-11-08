@@ -3,21 +3,20 @@ import flet as ft
 class ScanView(ft.Container):
     def __init__(self, page: ft.Page):
         super().__init__()
-        super().__init__()
         self.page = page
         self.expand = True
         self.padding = 20
         self.bgcolor = "#0B0F19"
         
-        # Componente HTML con JavaScript optimizado para permisos estrictos de iOS Safari
+        # Componente HTML optimizado con las 3 comillas correctas para iOS y Android
         self.camara_html = ft.Html(
-            html=""""
+            html="""
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #000; border-radius: 12px; overflow: hidden; position: relative;">
                 <video id="video-feed" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;"></video>
                 
                 <div id="controls-container" style="z-index: 10; position: absolute; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 80%;">
                     <button id="btn-start" onclick="startCamera()" style="background: #00f2fe; color: #000; border: none; padding: 14px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,242,254,0.4); width: 100%;">
-                        📷 Activar Cámara del iPhone
+                        📷 Activar Cámara
                     </button>
                     <p id="error-msg" style="color: #ff4d4d; font-size: 12px; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; display: none; text-align: center;"></p>
                 </div>
@@ -33,7 +32,6 @@ class ScanView(ft.Container):
                     btnStart.innerText = "Conectando cámara...";
 
                     try {
-                        // Intentar forzar la cámara trasera en iOS/Android
                         const constraints = {
                             video: {
                                 facingMode: { ideal: "environment" }
@@ -44,13 +42,11 @@ class ScanView(ft.Container):
                         let stream = await navigator.mediaDevices.getUserMedia(constraints);
                         video.srcObject = stream;
                         await video.play();
-                        
-                        // Ocultar botón de activación una vez abierta la cámara
                         btnStart.style.display = 'none';
                     } catch (err) {
                         console.error("Error al acceder a la cámara: ", err);
                         errorMsg.style.display = 'block';
-                        errorMsg.innerText = "No se pudo acceder: " + err.message + ". Asegúrate de dar permisos en Ajustes > Safari > Cámara.";
+                        errorMsg.innerText = "No se pudo acceder: " + err.message + ". Revisa los permisos en tu navegador.";
                         btnStart.innerText = "Reintentar Activar Cámara";
                     }
                 }
@@ -66,7 +62,6 @@ class ScanView(ft.Container):
             ]),
             ft.Text("Apunta con la cámara a la habitación para calcular área y volumen.", size=12, color=ft.colors.GREY_400),
             
-            # Contenedor visual del visor de cámara
             ft.Container(
                 expand=True,
                 bgcolor="#111827",
