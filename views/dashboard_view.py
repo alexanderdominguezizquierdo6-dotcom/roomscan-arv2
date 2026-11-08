@@ -72,13 +72,18 @@ class DashboardView(ft.Container):
 
                 *cards,
 
-                ft.ElevatedButton(
-                    text="+ Iniciar Nuevo Escaneo AR",
-                    color=ft.colors.BLACK,
-                    bgcolor=ft.colors.CYAN_ACCENT,
-                    height=50,
-                    style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-                    on_click=self._ir_a_escaneo
+                # Botón de escaneo optimizado con contenedor y respuesta táctil inmediata
+                ft.Container(
+                    content=ft.ElevatedButton(
+                        text="+ Iniciar Nuevo Escaneo AR",
+                        color=ft.colors.BLACK,
+                        bgcolor=ft.colors.CYAN_ACCENT,
+                        height=50,
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                        on_click=self._ir_a_escaneo
+                    ),
+                    ink=True,
+                    border_radius=10
                 ),
 
                 ft.Row([
@@ -90,7 +95,7 @@ class DashboardView(ft.Container):
             ]
         )
 
-    def _build_property_card(self, title, tag, coords, area, vol, tag_color):
+    def _build_property_card(self, title, tag, coords, area, vol, tag_number):
         return ft.Container(
             padding=15,
             bgcolor="#1E293B",
@@ -100,7 +105,7 @@ class DashboardView(ft.Container):
                     ft.Text(title, size=16, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                     ft.Container(
                         content=ft.Text(tag, size=10, color=ft.colors.WHITE, weight=ft.FontWeight.BOLD),
-                        bgcolor=tag_color,
+                        bgcolor=tag_number,
                         padding=ft.padding.symmetric(horizontal=8, vertical=4),
                         border_radius=6
                     )

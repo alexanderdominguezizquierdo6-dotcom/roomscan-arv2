@@ -56,10 +56,31 @@ def main(page: ft.Page):
     def trigger_real_download(e):
         platform = selected_software_target.value
         confirm_dlg.open = False
+        page.update()
         
+        # En iPhone (iOS) Apple bloquea descargas directas de .ipa; mostramos la instalación PWA fluida
+        if platform == "iOS":
+            dlg_ios = ft.AlertDialog(
+                title=ft.Text("Instalar en tu iPhone", color=ft.colors.CYAN_ACCENT, weight=ft.FontWeight.BOLD),
+                content=ft.Text(
+                    "Por seguridad de iOS, los iPhone instalan la app directo desde el navegador:\n\n"
+                    "1. Toca el botón 'Compartir' (cuadrado con flecha hacia arriba) abajo en Safari.\n"
+                    "2. Selecciona 'Agregar a inicio'.\n\n"
+                    "¡Así tendrás RoomScan AR como app nativa en tu pantalla principal!",
+                    color=ft.colors.WHITE,
+                    size=13
+                ),
+                actions=[ft.ElevatedButton("¡Entendido!", on_click=lambda _: close_ios_dlg(dlg_ios), bgcolor=ft.colors.CYAN_ACCENT, color=ft.colors.BLACK)],
+                bgcolor="#111827"
+            )
+            page.dialog = dlg_ios
+            dlg_ios.open = True
+            page.update()
+            return
+
+        # Para Android, Windows y macOS
         ext_map = {
             "Android": "roomscan_ar_installer.apk",
-            "iOS": "roomscan_ar_installer.ipa",
             "Windows": "roomscan_ar_installer.exe",
             "macOS": "roomscan_ar_installer.dmg",
             "Web PWA": "roomscan_ar_web.zip"
@@ -79,13 +100,17 @@ def main(page: ft.Page):
         page.snack_bar.open = True
         page.update()
 
+    def close_ios_dlg(dlg):
+        dlg.open = False
+        page.update()
+
     confirm_dlg = ft.AlertDialog(
         modal=True,
         title=ft.Text("Confirmar Descarga de Software", color=ft.colors.CYAN_ACCENT),
         content=ft.Text("¿Estás seguro de que deseas descargar el instalador oficial?"),
         actions=[
             ft.TextButton("Cancelar", on_click=close_dlg),
-            ft.ElevatedButton("Sí, Descargar", on_click=trigger_real_download, bgcolor=ft.colors.CYAN_400, color=ft.colors.BLACK),
+            ft.ElevatedButton("Sí, Continuar", on_click=trigger_real_download, bgcolor=ft.colors.CYAN_400, color=ft.colors.BLACK),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
         bgcolor="#111827"
@@ -94,7 +119,7 @@ def main(page: ft.Page):
     def handle_download_selection(e):
         platform = e.control.data
         selected_software_target.value = platform
-        confirm_dlg.content = ft.Text(f"¿Estás seguro de descargar RoomScan AR para {platform}?")
+        confirm_dlg.content = ft.Text(f"¿Deseas obtener RoomScan AR para {platform}?")
         page.dialog = confirm_dlg
         confirm_dlg.open = True
         page.update()
@@ -139,10 +164,10 @@ def main(page: ft.Page):
         tooltip="Descargar Software Multiplataforma",
         items=[
             ft.PopupMenuItem(text="Android (.apk)", icon=ft.icons.ANDROID, on_click=handle_download_selection, data="Android"),
-            ft.PopupMenuItem(text="iOS (.ipa)", icon=ft.icons.APPLE, on_click=handle_download_selection, data="iOS"),
+            ft.PopupMenuItem(text="iOS / iPhone", icon=ft.icons.APPLE, on_click=handle_download_selection, data="iOS"),
             ft.PopupMenuItem(text="Windows (.exe)", icon=ft.icons.WINDOW, on_click=handle_download_selection, data="Windows"),
             ft.PopupMenuItem(text="macOS (.app)", icon=ft.icons.LAPTOP_MAC, on_click=handle_download_selection, data="macOS"),
-            ft.PopupMenuItem(text="Web PWA / Cloud (.zip)", icon=ft.icons.WEB, on_click=handle_download_selection, data="Web PWA"),
+            ft.PopupMenuItem(text="Web PWA / Cloud", icon=ft.icons.WEB, on_click=handle_download_selection, data="Web PWA"),
         ]
     )
 
@@ -175,5 +200,4 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    # view=ft.AppView.WEB_BROWSER abre la app en el navegador web para activar la cámara frontal y GPS
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, assets_dir="assets")
