@@ -8,41 +8,25 @@ class ScanView(ft.Container):
         self.padding = 20
         self.bgcolor = "#0B0F19"
         
-        # Visor AR nativo robusto (sin errores de compatibilidad web)
-        self.ar_viewfinder = ft.Container(
-            expand=True,
-            bgcolor="#111827",
-            border_radius=12,
-            border=ft.border.all(1, ft.colors.CYAN_900),
-            padding=20,
-            alignment=ft.alignment.center,
-            content=ft.Column([
-                ft.Icon(ft.icons.CAMERA, size=48, color=ft.colors.CYAN_ACCENT),
-                ft.Text("Visor de Realidad Aumentada (AR)", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
-                ft.Text("Cámara trasera y sensores LiDAR calibrados.", size=12, color=ft.colors.GREEN_400),
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                ft.Container(
-                    padding=15,
-                    bgcolor="#1E293B",
-                    border_radius=10,
-                    content=ft.Column([
-                        ft.Text("📊 Métricas de Escaneo en Vivo:", size=12, color=ft.colors.CYAN_400, weight=ft.FontWeight.BOLD),
-                        ft.Text("• Área detectada: 17.28 m²", size=13, color=ft.colors.WHITE),
-                        ft.Text("• Volumen 3D: 47.52 m³", size=13, color=ft.colors.WHITE),
-                        ft.Text("• Estado: Superficie plana fijada", size=11, color=ft.colors.GREY_400),
-                    ], spacing=5)
-                )
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER)
-        )
-
         self.content = ft.Column([
             ft.Row([
                 ft.IconButton(icon=ft.icons.ARROW_BACK, icon_color=ft.colors.CYAN_ACCENT, on_click=lambda _: self.page.go("/dashboard")),
-                ft.Text("Escaneo AR y Cámara", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                ft.Text("Escaneo AR y Cámara en Vivo", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
             ]),
-            ft.Text("Apunta con el dispositivo para calcular área y volumen.", size=12, color=ft.colors.GREY_400),
+            ft.Text("Apunta con la cámara a la habitación para calcular área y volumen.", size=12, color=ft.colors.GREY_400),
             
-            self.ar_viewfinder,
+            ft.Container(
+                expand=True,
+                bgcolor="#111827",
+                border_radius=12,
+                border=ft.border.all(1, ft.colors.CYAN_900),
+                alignment=ft.alignment.center,
+                content=ft.Column([
+                    ft.Icon(ft.icons.CAMERA_ALT, size=48, color=ft.colors.CYAN_ACCENT),
+                    ft.Text("Cámara lista para activarse", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                    ft.Text("Pulsa el botón inferior para iniciar el visor AR en tiempo real.", size=12, color=ft.colors.GREY_400, text_align=ft.TextAlign.CENTER),
+                ], alignment=ft.MainAxisAlignment.CENTER)
+            ),
 
             ft.Row([
                 ft.ElevatedButton(
@@ -55,3 +39,54 @@ class ScanView(ft.Container):
                 )
             ], alignment=ft.MainAxisAlignment.CENTER)
         ], expand=True, spacing=10)
+
+    def did_mount(self):
+        # Se ejecuta automáticamente al abrir la vista de escaneo en el celular
+        js_code = """
+        (function() {
+            if (!document.getElementById('ar-video-wrapper')) {
+                let videoContainer = document.createElement('div');
+                videoContainer.id = 'ar-video-wrapper';
+                videoContainer.style.position = 'fixed';
+                videoContainer.style.top = '0';
+                videoContainer.style.left = '0';
+                videoContainer.style.width = '100vw';
+                videoContainer.style.height = '100vh';
+                videoContainer.style.zIndex = '99999';
+                videoContainer.style.background = '#000';
+                videoContainer.style.display = 'flex';
+                videoContainer.style.flexDirection = 'column';
+                videoContainer.style.alignItems = 'center';
+                videoContainer.style.justifyContent = 'center';
+
+                videoContainer.innerHTML = `
+                    <video id="live-ar-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;"></video>
+                    <div style="position: absolute; bottom: 40px; z-index: 100000; display: flex; gap: 15px;">
+                        <button id="close-cam-btn" style="background: #ff4d4d; color: #fff; border: none; padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">Cerrar Cámara</button>
+                    </div>
+                `;
+                document.body.appendChild(videoContainer);
+
+                // Forzar apertura de la cámara trasera del celular (iPhone/Android)
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+                    .then(stream => {
+                        const video = document.getElementById('live-ar-video');
+                        video.srcObject = stream;
+                        video.play();
+                    })
+                    .catch(err => {
+                        alert("No se pudo acceder a la cámara: " + err.message + ". Verifica los permisos en tu navegador.");
+                        document.getElementById('ar-video-wrapper').remove();
+                    });
+
+                document.getElementById('close-cam-btn').onclick = function() {
+                    let videoElement = document.getElementById('live-ar-video');
+                    if (videoElement && videoElement.srcObject) {
+                        videoElement.srcObject.getTracks().forEach(track => track.stop());
+                    }
+                    document.getElementById('ar-video-wrapper').remove();
+                };
+            }
+        })();
+        """
+        self.page.run_js(js_code)

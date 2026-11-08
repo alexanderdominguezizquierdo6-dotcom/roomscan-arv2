@@ -16,7 +16,7 @@ class GeoView(ft.Container):
         self.txt_tipo = ft.TextField(value="Catastro / Bienes Raíces", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
         
         self.txt_coords = ft.TextField(
-            value=f"Latitud: {self.lat_val} | Longitud: {self.lon_val} (GPS Satelital Activo)", 
+            value="Esperando señal GPS en tiempo real...", 
             read_only=True, 
             bgcolor="#1E293B", 
             color=ft.colors.CYAN_ACCENT,
@@ -24,22 +24,22 @@ class GeoView(ft.Container):
             border_radius=10
         )
 
-        # Contenedor visual de Geolocalización nativo (compatible con Flet 0.23.1)
+        self.gps_status_label = ft.Text("🛰️ Estado GPS: Solicitando permisos de ubicación...", size=13, color=ft.colors.YELLOW_400)
+
         self.map_container = ft.Container(
-            height=200,
+            height=180,
             bgcolor="#111827",
             border_radius=12,
             border=ft.border.all(1, ft.colors.CYAN_900),
             padding=20,
             content=ft.Column([
                 ft.Row([
-                    ft.Icon(ft.icons.MAP, color=ft.colors.CYAN_ACCENT, size=28),
-                    ft.Text("Módulo de Posicionamiento GPS", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE)
+                    ft.Icon(ft.icons.GPS_FIXED, color=ft.colors.CYAN_ACCENT, size=28),
+                    ft.Text("Monitoreo GPS en Vivo", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE)
                 ], alignment=ft.MainAxisAlignment.START),
                 ft.Divider(height=10, color=ft.colors.TRANSPARENT),
-                ft.Text("📡 Satélites conectados: 12/12 (Precisión alta)", size=12, color=ft.colors.GREEN_400),
-                ft.Text(f"Coordenadas actuales: {self.lat_val}, {self.lon_val}", size=13, color=ft.colors.CYAN_ACCENT),
-                ft.Text("Ubicación sincronizada con OpenStreetMap / Cartografía AR.", size=11, color=ft.colors.GREY_400),
+                self.gps_status_label,
+                ft.Text("Cuando aceptes el aviso del navegador, verás tus coordenadas reales actualizándose aquí.", size=11, color=ft.colors.GREY_400),
             ], alignment=ft.MainAxisAlignment.CENTER)
         )
 
@@ -72,6 +72,41 @@ class GeoView(ft.Container):
                 ft.TextButton("Volver al Escaneo", on_click=lambda _: self.page.go("/scan"))
             ]
         )
+
+    def did_mount(self):
+        # Monitorear la posición GPS real del celular continuamente
+        js_gps = """
+        (function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const acc = position.coords.accuracy;
+                        
+                        // Actualizar visualmente la interfaz modificando elementos del DOM en tiempo real
+                        let txtBox = document.querySelector('input[aria-label*="Esperando"]');
+                        if (!txtBox) {
+                            // Buscar cualquier input de coordenadas disponible
+                            let inputs = document.querySelectorAll('input');
+                            inputs.forEach(inp => {
+                                if (inp.value && inp.value.includes("GPS") || inp.value.includes("Esperando")) {
+                                    inp.value = "Lat: " + lat.toFixed(6) + " | Lon: " + lon.toFixed(6) + " (Precisión: " + acc.toFixed(1) + "m)";
+                                    inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                }
+                            });
+                        }
+                        console.log("GPS Activo en tiempo real -> Lat: " + lat + ", Lon: " + lon);
+                    },
+                    function(error) {
+                        console.warn("Error de GPS: " + error.message);
+                    },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                );
+            }
+        })();
+        """
+        self.page.run_js(js_gps)
 
     def _guardar_registro(self, e):
         area = self.page.session.get("temp_area") or 17.28
