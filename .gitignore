@@ -1,1 +1,4 @@
 Nuevo Documento de texto
+/assets
+*.html
+assets/index.html
