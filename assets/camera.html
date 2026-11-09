@@ -60,14 +60,16 @@
             box-shadow: none;
         }
         #error-box {
-            background: rgba(255, 77, 77, 0.9);
+            background: rgba(255, 77, 77, 0.95);
             color: white;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             font-size: 13px;
-            text-align: center;
+            text-align: left;
             display: none;
             width: 100%;
+            box-sizing: border-box;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -76,7 +78,7 @@
         <video id="camera-stream" autoplay playsinline muted></video>
         <div class="overlay-ui">
             <div id="error-box"></div>
-            <button id="btn-activate" onclick="startCamera()">📷 Permitir y Activar Cámara Trasera</button>
+            <button id="btn-activate" onclick="startCamera()">📷 Activar Cámara Trasera</button>
             <button class="btn-back" onclick="window.location.href='/'">Volver a la App</button>
         </div>
     </div>
@@ -90,25 +92,28 @@
             errorBox.style.display = 'none';
             btnActivate.innerText = "Solicitando permisos...";
 
-            try {
-                // Solicitar explícitamente la cámara trasera del dispositivo móvil
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { exact: "environment" } },
-                    audio: false
-                }).catch(() => {
-                    return navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: "environment" },
-                        audio: false
-                    });
-                });
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                errorBox.style.display = 'block';
+                errorBox.innerHTML = "<b>Error:</b> Tu navegador no soporta acceso a la cámara.";
+                btnActivate.innerText = "Reintentar";
+                return;
+            }
 
+            try {
+                // Uso de facingMode ideal para evitar bloqueos por hardware exacto
+                const constraints = {
+                    video: { facingMode: { ideal: "environment" } },
+                    audio: false
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
-                btnActivate.style.display = 'none'; // Ocultar botón una vez encendida la cámara real
+                btnActivate.style.display = 'none'; // Ocultar botón al arrancar con éxito
             } catch (err) {
                 console.error("Error de cámara:", err);
                 errorBox.style.display = 'block';
-                errorBox.innerHTML = "<b>No se pudo abrir la cámara:</b> " + err.message + "<br><br>Verifica que diste permisos en los Ajustes de tu navegador o Safari.";
+                errorBox.innerHTML = `<b>No se pudo abrir la cámara:</b><br>• Tipo: ${err.name}<br>• Mensaje: ${err.message}<br><br><i>Solución: Revisa que tu navegador tenga permiso para usar la cámara en este sitio.</i>`;
                 btnActivate.innerText = "Reintentar Activar Cámara";
             }
         }

@@ -37,6 +37,8 @@
             font-family: monospace;
             font-size: 14px;
             color: #38bdf8;
+            text-align: left;
+            word-break: break-word;
         }
         button {
             background-color: #00f2fe;
@@ -61,15 +63,15 @@
 <body>
     <div class="card">
         <h2>🛰️ Geolocalización GPS Real</h2>
-        <div id="status">Esperando permiso de ubicación...</div>
+        <div id="status">Pulsa el botón para autorizar la ubicación...</div>
         
         <div class="coord-box" id="coords-display">
-            Latitud: Buscando señal...<br>
-            Longitud: Buscando señal...<br>
+            Latitud: Esperando...<br>
+            Longitud: Esperando...<br>
             Precisión: -
         </div>
 
-        <button onclick="requestGPS()">Actualizar Posición GPS</button>
+        <button onclick="requestGPS()">Activar Ubicación GPS</button>
         <button class="btn-back" onclick="window.location.href='/'">Volver a la App</button>
     </div>
 
@@ -84,15 +86,17 @@
                 return;
             }
 
-            statusDiv.innerText = "Por favor, acepta el aviso de permiso de GPS...";
-            
-            navigator.geolocation.watchPosition(
+            statusDiv.innerText = "Solicitando acceso al GPS...";
+            statusDiv.style.color = "#facc15";
+
+            // Usar getCurrentPosition para forzar el aviso nativo del navegador de forma inmediata
+            navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     const acc = position.coords.accuracy;
 
-                    statusDiv.innerText = "¡GPS Activo en Tiempo Real!";
+                    statusDiv.innerText = "¡GPS Conectado en Tiempo Real!";
                     statusDiv.style.color = "#4ade80";
 
                     coordsDiv.innerHTML = `
@@ -100,21 +104,33 @@
                         Longitud: ${lon.toFixed(6)}<br>
                         Precisión: ±${acc.toFixed(1)} metros
                     `;
+
+                    // Iniciar monitoreo continuo tras conceder el permiso
+                    navigator.geolocation.watchPosition(
+                        (pos) => {
+                            coordsDiv.innerHTML = `
+                                Latitud: ${pos.coords.latitude.toFixed(6)}<br>
+                                Longitud: ${pos.coords.longitude.toFixed(6)}<br>
+                                Precisión: ±${pos.coords.accuracy.toFixed(1)} metros (En vivo)
+                            `;
+                        },
+                        (err) => { console.warn(err); },
+                        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+                    );
                 },
                 (error) => {
-                    console.error(error);
-                    statusDiv.innerText = "Permiso denegado o error GPS: " + error.message;
+                    console.error("Error GPS:", error);
+                    statusDiv.innerText = "Permiso denegado o error de GPS.";
                     statusDiv.style.color = "#ff4d4d";
+                    coordsDiv.innerHTML = `Código: ${error.code}<br>${error.message}<br><br><i>Habilita el permiso de Ubicación en la configuración de tu navegador.</i>`;
                 },
                 {
                     enableHighAccuracy: true,
                     maximumAge: 0,
-                    timeout: 10000
+                    timeout: 15000
                 }
             );
         }
-
-        window.onload = requestGPS;
     </script>
 </body>
 </html>
