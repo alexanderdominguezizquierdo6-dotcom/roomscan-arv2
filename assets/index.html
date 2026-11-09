@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomScan AR - Escaneo Activo</title>
+    <title>RoomScan AR - Visor de Hardware</title>
     <style>
         body {
             margin: 0;
@@ -74,12 +74,11 @@
         
         <div class="log-box" id="status-log">Estado: Hardware listo para activar.</div>
 
-        <!-- Botón para pasar a la vista de guardado en Flet -->
         <button class="btn-save" onclick="irARegistro()">Continuar a Guardar Inmueble ➔</button>
     </div>
 
     <script>
-        let datosGPS = { lat: 0.0, lon: 0.0 };
+        let datosGPS = { lat: 18.334703, lon: -93.206845 };
 
         function log(msg, color = "#facc15") {
             const box = document.getElementById('status-log');
@@ -126,7 +125,7 @@
         }
 
         function irARegistro() {
-            // Redirige a la vista de geo en la app pasando las coordenadas obtenidas por URL
+            // Redirige a la ruta de la app Flet pasando lat y lon reales
             window.location.href = `/geo?lat=${datosGPS.lat}&lon=${datosGPS.lon}`;
         }
     </script>

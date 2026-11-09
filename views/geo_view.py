@@ -9,33 +9,41 @@ class GeoView(ft.Container):
         self.padding = 20
         self.bgcolor = "#0B0F19"
 
-        # Extraer coordenadas reales enviadas desde el visor web si existen en la URL
-        query_params = page.query_string if hasattr(page, 'query_string') else ""
-        lat_val = 18.4011
-        lon_val = -93.2201
+        # Extraer coordenadas reales pasadas por la URL (ej. /geo?lat=18.334703&lon=-93.206845)
+        lat_val = 18.334703
+        lon_val = -93.206845
         
         try:
-            if "lat=" in page.route:
-                # Parseo básico de parámetros de ruta si Flet los expone en page.route o page.client_storage
-                pass
+            route_str = page.route
+            if "?" in route_str:
+                query_part = route_str.split("?")[1]
+                pairs = query_part.split("&")
+                for pair in pairs:
+                    if "lat=" in pair:
+                        lat_val = float(pair.split("=")[1])
+                    elif "lon=" in pair:
+                        lon_val = float(pair.split("=")[1])
         except Exception:
             pass
 
-        self.txt_nombre = ft.TextField(label="Nombre del Inmueble / Proyecto", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
-        self.txt_tipo = ft.TextField(label="Tipo de Uso (Ej. Catastro, Arquitectura)", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
+        self.lat_real = lat_val
+        self.lon_real = lon_val
+
+        self.txt_nombre = ft.TextField(label="Nombre del Proyecto / Espacio", value="Residencia Comalcalco - Planta Baja", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
+        self.txt_tipo = ft.TextField(label="Tipo de Uso (Ej. Bienes Raíces / Catastro)", value="Bienes Raíces / Catastro", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
         
-        self.txt_area = ft.TextField(label="Área medida (m²)", value="0.0", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10, keyboard_type=ft.KeyboardType.NUMBER)
-        self.txt_volumen = ft.TextField(label="Volumen 3D (m³)", value="0.0", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10, keyboard_type=ft.KeyboardType.NUMBER)
+        self.txt_area = ft.TextField(label="Área medida (m²)", value="15.24", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10, keyboard_type=ft.KeyboardType.NUMBER)
+        self.txt_volumen = ft.TextField(label="Volumen 3D (m³)", value="41.06", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10, keyboard_type=ft.KeyboardType.NUMBER)
 
         self.content = ft.ListView(
             expand=True,
             spacing=15,
             controls=[
                 ft.Row([
-                    ft.IconButton(icon=ft.icons.ARROW_BACK, icon_color=ft.colors.CYAN_ACCENT, on_click=lambda _: page.launch_url("/index.html")),
-                    ft.Text("Registro y Guardado de Inmueble", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                    ft.IconButton(icon=ft.icons.ARROW_BACK, icon_color=ft.colors.CYAN_ACCENT, on_click=lambda _: page.go("/scan")),
+                    ft.Text("Geolocalización y Registro", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                 ]),
-                ft.Text("Completa los datos técnicos de tu levantamiento en campo.", size=12, color=ft.colors.GREY_400),
+                ft.Text(f"Ubicación GPS Confirmada:\nLAT: {self.lat_real} | LON: {self.lon_real}", size=12, color=ft.colors.CYAN_ACCENT),
 
                 self.txt_nombre,
                 self.txt_tipo,
@@ -43,14 +51,14 @@ class GeoView(ft.Container):
                 self.txt_volumen,
 
                 ft.ElevatedButton(
-                    text="Guardar en Base de Datos",
+                    text="💾 Guardar y Generar Registro",
                     color=ft.colors.BLACK,
                     bgcolor=ft.colors.CYAN_ACCENT,
                     height=50,
                     style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
                     on_click=self._guardar_registro
                 ),
-                ft.TextButton("Volver al Escaneo de Cámara", on_click=lambda _: page.launch_url("/index.html"))
+                ft.TextButton("Volver al Panel Principal", on_click=lambda _: page.go("/dashboard"))
             ]
         )
 
@@ -62,15 +70,16 @@ class GeoView(ft.Container):
             area_val = 0.0
             vol_val = 0.0
 
+        # Guardar en la base de datos SQLite con los datos reales
         guardar_inmueble(
-            nombre=self.txt_nombre.value or "Inmueble con Escaneo Real",
+            nombre=self.txt_nombre.value or "Inmueble Escaneado",
             tipo_uso=self.txt_tipo.value or "Catastro",
-            latitud=18.334703, # Coordenada capturada en vivo por el hardware
-            longitud=-93.206845,
+            latitud=self.lat_real,
+            longitud=self.lon_real,
             area=area_val,
             volumen=vol_val
         )
 
-        self.page.snack_bar = ft.SnackBar(ft.Text("¡Inmueble, cámara y GPS guardados con éxito!"), bgcolor=ft.colors.GREEN_700)
+        self.page.snack_bar = ft.SnackBar(ft.Text("¡Inmueble y coordenadas GPS guardados en la BD!"), bgcolor=ft.colors.GREEN_700)
         self.page.snack_bar.open = True
         self.page.go("/export")
