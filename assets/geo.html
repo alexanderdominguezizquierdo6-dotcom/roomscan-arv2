@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomScan AR - GPS en Tiempo Real</title>
+    <title>GPS Real</title>
     <style>
         body {
             margin: 0;
-            background-color: #0B0F19;
-            color: white;
+            background: #0B0F19;
+            color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             flex-direction: column;
@@ -18,117 +18,86 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        .card {
-            background-color: #111827;
+        .box {
+            background: #111827;
             border: 1px solid #0e7490;
             border-radius: 16px;
-            padding: 24px;
+            padding: 20px;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             text-align: center;
         }
-        h2 { color: #00f2fe; margin-top: 0; font-size: 20px; }
-        .coord-box {
+        h3 { color: #00f2fe; margin-top: 0; }
+        .data {
             background: #1E293B;
             padding: 15px;
             border-radius: 10px;
             margin: 15px 0;
             font-family: monospace;
-            font-size: 14px;
+            font-size: 13px;
             color: #38bdf8;
             text-align: left;
-            word-break: break-word;
         }
         button {
-            background-color: #00f2fe;
+            background: #00f2fe;
             color: #000;
             border: none;
             padding: 14px;
-            font-size: 15px;
             font-weight: bold;
             border-radius: 10px;
-            cursor: pointer;
             width: 100%;
-            margin-top: 10px;
+            cursor: pointer;
+            margin-top: 8px;
         }
-        .btn-back {
-            background-color: #1E293B;
-            color: #fff;
-            margin-top: 10px;
-        }
-        #status { font-size: 13px; color: #facc15; margin-bottom: 10px; }
+        .btn-sec { background: #1E293B; color: #fff; }
+        #status { font-size: 12px; color: #facc15; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🛰️ Geolocalización GPS Real</h2>
-        <div id="status">Pulsa el botón para autorizar la ubicación...</div>
+    <div class="box">
+        <h3>🛰️ Conexión GPS Satelital</h3>
+        <div id="status">Presiona el botón para autorizar la lectura de tu GPS real.</div>
         
-        <div class="coord-box" id="coords-display">
-            Latitud: Esperando...<br>
-            Longitud: Esperando...<br>
-            Precisión: -
+        <div class="data" id="output">
+            Latitud: ---<br>
+            Longitud: ---<br>
+            Precisión: ---
         </div>
 
-        <button onclick="requestGPS()">Activar Ubicación GPS</button>
-        <button class="btn-back" onclick="window.location.href='/'">Volver a la App</button>
+        <button onclick="getGPS()">📍 Capturar Mi Ubicación Real</button>
+        <button class="btn-sec" onclick="window.location.href='/'">Volver a la App</button>
     </div>
 
     <script>
-        function requestGPS() {
-            const statusDiv = document.getElementById('status');
-            const coordsDiv = document.getElementById('coords-display');
+        function getGPS() {
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
 
             if (!navigator.geolocation) {
-                statusDiv.innerText = "Tu navegador no soporta geolocalización.";
-                statusDiv.style.color = "#ff4d4d";
+                status.innerText = "Error: Geolocalización no soportada en este navegador.";
+                status.style.color = "#f87171";
                 return;
             }
 
-            statusDiv.innerText = "Solicitando acceso al GPS...";
-            statusDiv.style.color = "#facc15";
+            status.innerText = "Solicitando coordenadas exactas al chip GPS...";
+            status.style.color = "#facc15";
 
-            // Usar getCurrentPosition para forzar el aviso nativo del navegador de forma inmediata
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const acc = position.coords.accuracy;
-
-                    statusDiv.innerText = "¡GPS Conectado en Tiempo Real!";
-                    statusDiv.style.color = "#4ade80";
-
-                    coordsDiv.innerHTML = `
-                        Latitud: ${lat.toFixed(6)}<br>
-                        Longitud: ${lon.toFixed(6)}<br>
-                        Precisión: ±${acc.toFixed(1)} metros
+                (pos) => {
+                    status.innerText = "¡Ubicación Satelital Confirmada!";
+                    status.style.color = "#4ade80";
+                    output.innerHTML = `
+                        <b>Latitud:</b> ${pos.coords.latitude.toFixed(6)}<br>
+                        <b>Longitud:</b> ${pos.coords.longitude.toFixed(6)}<br>
+                        <b>Precisión:</b> ±${pos.coords.accuracy.toFixed(1)} metros
                     `;
-
-                    // Iniciar monitoreo continuo tras conceder el permiso
-                    navigator.geolocation.watchPosition(
-                        (pos) => {
-                            coordsDiv.innerHTML = `
-                                Latitud: ${pos.coords.latitude.toFixed(6)}<br>
-                                Longitud: ${pos.coords.longitude.toFixed(6)}<br>
-                                Precisión: ±${pos.coords.accuracy.toFixed(1)} metros (En vivo)
-                            `;
-                        },
-                        (err) => { console.warn(err); },
-                        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-                    );
                 },
-                (error) => {
-                    console.error("Error GPS:", error);
-                    statusDiv.innerText = "Permiso denegado o error de GPS.";
-                    statusDiv.style.color = "#ff4d4d";
-                    coordsDiv.innerHTML = `Código: ${error.code}<br>${error.message}<br><br><i>Habilita el permiso de Ubicación en la configuración de tu navegador.</i>`;
+                (err) => {
+                    status.innerText = "Error al obtener ubicación.";
+                    status.style.color = "#f87171";
+                    output.innerHTML = `<b>Mensaje:</b> ${err.message}<br><br><i>Asegúrate de permitir la ubicación en la barra de direcciones de tu navegador.</i>`;
                 },
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 15000
-                }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
     </script>

@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomScan AR - Cámara en Vivo</title>
+    <title>Visor de Cámara Real</title>
     <style>
+        * { box-sizing: border-box; }
         body {
             margin: 0;
-            background-color: #0B0F19;
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0B0F19;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -31,90 +32,87 @@
             height: 100%;
             object-fit: cover;
         }
-        .overlay-ui {
+        .controls {
             position: absolute;
-            bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
+            bottom: 30px;
             width: 90%;
             max-width: 400px;
-            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 20;
         }
         button {
-            background-color: #00f2fe;
+            background: #00f2fe;
             color: #000;
             border: none;
-            padding: 16px 24px;
+            padding: 16px;
             font-size: 16px;
             font-weight: bold;
             border-radius: 12px;
             cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
         }
-        .btn-back {
-            background-color: #1E293B;
+        .btn-secondary {
+            background: #1E293B;
             color: #fff;
             box-shadow: none;
         }
-        #error-box {
-            background: rgba(255, 77, 77, 0.95);
-            color: white;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 13px;
-            text-align: left;
+        #status-log {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #38bdf8;
             display: none;
-            width: 100%;
-            box-sizing: border-box;
-            word-break: break-word;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
     <div id="video-container">
-        <video id="camera-stream" autoplay playsinline muted></video>
-        <div class="overlay-ui">
-            <div id="error-box"></div>
-            <button id="btn-activate" onclick="startCamera()">📷 Activar Cámara Trasera</button>
-            <button class="btn-back" onclick="window.location.href='/'">Volver a la App</button>
+        <video id="webcam" autoplay playsinline muted></video>
+        <div class="controls">
+            <div id="status-log"></div>
+            <button id="btn-start" onclick="initCam()">📷 Abrir Cámara del Celular</button>
+            <button class="btn-secondary" onclick="window.location.href='/'">Volver a la App</button>
         </div>
     </div>
 
     <script>
-        async function startCamera() {
-            const video = document.getElementById('camera-stream');
-            const errorBox = document.getElementById('error-box');
-            const btnActivate = document.getElementById('btn-activate');
-            
-            errorBox.style.display = 'none';
-            btnActivate.innerText = "Solicitando permisos...";
+        async function initCam() {
+            const video = document.getElementById('webcam');
+            const btn = document.getElementById('btn-start');
+            const log = document.getElementById('status-log');
 
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                errorBox.style.display = 'block';
-                errorBox.innerHTML = "<b>Error:</b> Tu navegador no soporta acceso a la cámara.";
-                btnActivate.innerText = "Reintentar";
-                return;
-            }
+            log.style.display = 'block';
+            log.innerText = "Solicitando permisos de cámara al sistema operativo...";
 
             try {
-                // Uso de facingMode ideal para evitar bloqueos por hardware exacto
-                const constraints = {
-                    video: { facingMode: { ideal: "environment" } },
-                    audio: false
-                };
+                // Intentar primero cámara trasera, si falla usar cualquier cámara disponible
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: "environment" } },
+                        audio: false
+                    });
+                } catch (e) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
 
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
-                btnActivate.style.display = 'none'; // Ocultar botón al arrancar con éxito
+                
+                log.style.color = "#4ade80";
+                log.innerText = "¡Cámara activa en vivo!";
+                btn.style.display = 'none';
             } catch (err) {
-                console.error("Error de cámara:", err);
-                errorBox.style.display = 'block';
-                errorBox.innerHTML = `<b>No se pudo abrir la cámara:</b><br>• Tipo: ${err.name}<br>• Mensaje: ${err.message}<br><br><i>Solución: Revisa que tu navegador tenga permiso para usar la cámara en este sitio.</i>`;
-                btnActivate.innerText = "Reintentar Activar Cámara";
+                console.error(err);
+                log.style.color = "#f87171";
+                log.innerHTML = "<b>Error al abrir cámara:</b> " + err.message + 
+                    "<br><br><b>Solución:</b> Revisa los permisos de tu navegador en Ajustes > Privacidad > Cámara.";
+                btn.innerText = "Reintentar";
             }
         }
     </script>

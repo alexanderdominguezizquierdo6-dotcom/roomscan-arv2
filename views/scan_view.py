@@ -13,7 +13,7 @@ class ScanView(ft.Container):
                 ft.IconButton(icon=ft.icons.ARROW_BACK, icon_color=ft.colors.CYAN_ACCENT, on_click=lambda _: self.page.go("/dashboard")),
                 ft.Text("Escaneo AR y Cámara Real", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
             ]),
-            ft.Text("Activa el visor de cámara con permisos reales del navegador:", size=12, color=ft.colors.GREY_400),
+            ft.Text("Abre el visor de cámara para utilizar el hardware de tu dispositivo móvil.", size=12, color=ft.colors.GREY_400),
             
             ft.Container(
                 expand=True,
@@ -24,8 +24,8 @@ class ScanView(ft.Container):
                 alignment=ft.alignment.center,
                 content=ft.Column([
                     ft.Icon(ft.icons.CAMERA_ALT, size=64, color=ft.colors.CYAN_ACCENT),
-                    ft.Text("Cámara Web en Vivo", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
-                    ft.Text("Toca el botón para abrir la interfaz de video con acceso al hardware de tu celular.", size=13, color=ft.colors.GREY_400, text_align=ft.TextAlign.CENTER),
+                    ft.Text("Visor de Cámara en Vivo", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                    ft.Text("Toca el botón para abrir la interfaz con acceso real a la cámara.", size=13, color=ft.colors.GREY_400, text_align=ft.TextAlign.CENTER),
                     ft.Divider(height=20, color=ft.colors.TRANSPARENT),
                     ft.ElevatedButton(
                         text="🚀 Abrir Cámara en Vivo",
