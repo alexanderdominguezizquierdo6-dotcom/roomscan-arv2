@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomScan AR - Web Real</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0B0F19;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: #111827;
+            border: 1px solid #0e7490;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h2 { color: #00f2fe; margin-top: 0; font-size: 18px; }
+        video {
+            width: 100%;
+            height: 250px;
+            background: #000;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #00f2fe;
+            color: #000;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .btn-gps { background-color: #38bdf8; }
+        .log-box {
+            background: #1E293B;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #facc15;
+            text-align: left;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📷 RoomScan AR - Visor Web</h2>
+        <video id="webcam" autoplay playsinline muted></video>
+        
+        <button onclick="activarCamara()">Encender Cámara Trasera</button>
+        <button class="btn-gps" onclick="obtenerGPS()">Capturar GPS Real</button>
+        
+        <div class="log-box" id="status-log">Estado: Listo para conectar hardware.</div>
+    </div>
+
+    <script>
+        function log(msg, color = "#facc15") {
+            const box = document.getElementById('status-log');
+            box.style.color = color;
+            box.innerHTML = msg;
+        }
+
+        async function activarCamara() {
+            log("Solicitando permisos de cámara...");
+            const video = document.getElementById('webcam');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: "environment" } },
+                    audio: false
+                });
+                video.srcObject = stream;
+                await video.play();
+                log("¡Cámara activa en tiempo real!", "#4ade80");
+            } catch (err) {
+                console.error(err);
+                log("Error de cámara: " + err.message + "<br>Verifica permisos en el navegador.", "#f87171");
+            }
+        }
+
+        function obtenerGPS() {
+            log("Solicitando coordenadas GPS...");
+            if (!navigator.geolocation) {
+                log("Geolocalización no soportada.", "#f87171");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lon = pos.coords.longitude.toFixed(6);
+                    const acc = pos.coords.accuracy.toFixed(1);
+                    log(`<b>¡GPS Obtenido!</b><br>Lat: ${lat}<br>Lon: ${lon}<br>Precisión: ±${acc}m`, "#4ade80");
+                },
+                (err) => {
+                    console.error(err);
+                    log("Error GPS: " + err.message, "#f87171");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+    </script>
+</body>
+</html>
