@@ -16,7 +16,6 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            overflow: hidden;
             padding: 15px;
         }
         .container {
@@ -28,7 +27,7 @@
             justify-content: space-between;
             padding: 10px 0;
         }
-        video, canvas {
+        video {
             width: 100%;
             height: 60vh;
             background: #000;
@@ -36,12 +35,7 @@
             object-fit: cover;
             border: 1px solid #0e7490;
         }
-        canvas { display: none; }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .controls { display: flex; flex-direction: column; gap: 10px; }
         button {
             background: #00f2fe;
             color: #000;
@@ -64,43 +58,49 @@
             color: #38bdf8;
             font-family: monospace;
             text-align: left;
-            word-break: break-all;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3 style="color: #00f2fe; margin: 0; text-align: center; font-size: 16px;">📷 Visor AR - Cámara Trasera</h3>
+        <h3 style="color: #00f2fe; margin: 0; text-align: center; font-size: 16px;">📷 Cámara en Vivo (iPhone / PC)</h3>
         
         <video id="webcam" autoplay playsinline muted></video>
-        <canvas id="snapshot"></canvas>
 
-        <div id="status-log">Estado: Esperando permisos de hardware...</div>
+        <div id="status-log">Estado: Pulsa encender para activar la cámara.</div>
 
         <div class="controls">
             <button id="btn-start" onclick="initCam()">Encender Cámara</button>
-            <button id="btn-capture" class="btn-success" onclick="capturarFoto()">Capturar Entorno y Continuar ➔</button>
+            <button id="btn-capture" class="btn-success" onclick="siguientePaso()">Continuar a GPS ➔</button>
             <button class="btn-sec" onclick="window.location.href='/scan'">Volver a la App</button>
         </div>
     </div>
 
     <script>
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('snapshot');
-        const log = document.getElementById('status-log');
-        const btnStart = document.getElementById('btn-start');
-        const btnCapture = document.getElementById('btn-capture');
-        let mediaStream = null;
-
         async function initCam() {
-            log.innerText = "Solicitando acceso a la cámara trasera del dispositivo...";
+            const video = document.getElementById('webcam');
+            const log = document.getElementById('status-log');
+            const btnStart = document.getElementById('btn-start');
+            const btnCapture = document.getElementById('btn-capture');
+
+            log.innerText = "Solicitando permisos de cámara en Safari/Chrome...";
+
+            // Configuración segura compatible con iPhone y Laptops
+            const constraints = {
+                video: { facingMode: { exact: "environment" } }, // Intenta cámara trasera pura
+                audio: false
+            };
+
             try {
-                // Forzar la cámara trasera en dispositivos móviles (iPhone / Android)
-                mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: "environment" } },
-                    audio: false
-                });
-                video.srcObject = mediaStream;
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch (e) {
+                    // Si el dispositivo no soporta 'exact: environment', usa genérica o frontal trasera
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
+
+                video.srcObject = stream;
                 await video.play();
                 
                 log.style.color = "#4ade80";
@@ -110,22 +110,12 @@
             } catch (err) {
                 console.error(err);
                 log.style.color = "#f87171";
-                log.innerText = "Error de cámara: " + err.message + ". Asegúrate de dar permisos en Safari/Chrome.";
+                log.innerText = "Error: " + err.message + ". Verifica que Safari tenga permiso de Cámara en los Ajustes de tu iPhone.";
             }
         }
 
-        function capturarFoto() {
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 720;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            log.style.color = "#4ade80";
-            log.innerText = "¡Captura realizada con éxito! Redirigiendo a GPS...";
-            
-            setTimeout(() => {
-                window.location.href = '/geo.html';
-            }, 1000);
+        function siguientePaso() {
+            window.location.href = '/geo.html';
         }
     </script>
 </body>

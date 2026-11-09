@@ -58,17 +58,17 @@
 </head>
 <body>
     <div class="box">
-        <h3>🛰️ Geolocalización Satelital</h3>
-        <div id="status">Presiona el botón para autorizar el acceso al GPS de tu celular.</div>
+        <h3>🛰️ Geolocalización en Vivo</h3>
+        <div id="status">Toca el botón para autorizar el GPS de tu dispositivo.</div>
         
         <div class="data" id="output">
-            Latitud: Pendiente<br>
-            Longitud: Pendiente<br>
+            Latitud: Esperando...<br>
+            Longitud: Esperando...<br>
             Precisión: ---
         </div>
 
-        <button onclick="getGPS()">📍 Obtener Coordenadas Reales</button>
-        <button id="btn-enviar" class="btn-save" onclick="guardarYContinuar()">Enviar a la App de Flet ➔</button>
+        <button onclick="getGPS()">📍 Capturar Ubicación Real</button>
+        <button id="btn-enviar" class="btn-save" onclick="guardarYContinuar()">Guardar en la Base de Datos ➔</button>
         <button class="btn-sec" onclick="window.location.href='/scan'">Volver a la App</button>
     </div>
 
@@ -82,12 +82,12 @@
             const btnEnviar = document.getElementById('btn-enviar');
 
             if (!navigator.geolocation) {
-                status.innerText = "Error: Geolocalización no soportada en este navegador.";
+                status.innerText = "Geolocalización no soportada por este navegador.";
                 status.style.color = "#f87171";
                 return;
             }
 
-            status.innerText = "Conectando con satélites GPS (Alta precisión)...";
+            status.innerText = "Buscando satélites GPS...";
             status.style.color = "#facc15";
 
             navigator.geolocation.getCurrentPosition(
@@ -98,25 +98,27 @@
 
                     status.innerText = "¡Ubicación Real Obtenida con Éxito!";
                     status.style.color = "#4ade80";
-                    output.innerHTML = `
-                        <b>Latitud:</b> ${latReal.toFixed(6)}<br>
-                        <b>Longitud:</b> ${lonReal.toFixed(6)}<br>
-                        <b>Precisión:</b> ±${acc} metros
-                    `;
+                    
+                    // Corrección limpia de sintaxis para evitar errores en móviles
+                    output.innerHTML = 
+                        "<b>Latitud:</b> " + latReal.toFixed(6) + "<br>" +
+                        "<b>Longitud:</b> " + lonReal.toFixed(6) + "<br>" +
+                        "<b>Precisión:</b> ±" + acc + "m";
+                    
                     btnEnviar.style.display = 'block';
                 },
                 (err) => {
-                    status.innerText = "Error al obtener GPS.";
+                    status.innerText = "Error GPS: Permiso denegado o inactivo.";
                     status.style.color = "#f87171";
-                    output.innerHTML = `<b>Mensaje:</b> ${err.message}<br><br><i>Verifica que tu iPhone permita la ubicación en Ajustes > Privacidad.</i>`;
+                    output.innerHTML = "<b>Nota:</b> " + err.message + "<br><br><i>En iPhone ve a Ajustes > Safari > Ubicación y asegúrate de permitirla.</i>";
                 },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
             );
         }
 
         function guardarYContinuar() {
-            // Envía las coordenadas reales capturadas directamente a la ruta de Flet /geo
-            window.location.href = `/geo?lat=${latReal}&lon=${lonReal}`;
+            // Redirige de vuelta a la app de Flet enviando los parámetros reales
+            window.location.href = "/geo?lat=" + latReal + "&lon=" + lonReal;
         }
     </script>
 </body>

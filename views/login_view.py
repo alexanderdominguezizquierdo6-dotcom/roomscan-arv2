@@ -95,7 +95,6 @@ class LoginView(ft.Container):
         self._registrar_y_entrar(self.email_input.value, nombre, "Email Directo")
 
     def _login_con_proveedor(self, url, proveedor):
-        # Abre el apartado de inicio de sesión oficial de Google o Apple en el navegador
         self.page.launch_url(url)
         
         correo = f"usuario.{proveedor.lower()}@gmail.com" if proveedor == "Google" else f"usuario.{proveedor.lower()}@icloud.com"
@@ -118,7 +117,13 @@ class LoginView(ft.Container):
         conn.commit()
         conn.close()
         
+        # Guardado doble (client_storage y session) para garantizar persistencia absoluta al usar hardware externo
+        self.page.client_storage.set("usuario_activo", email)
+        self.page.client_storage.set("usuario_nombre", nombre)
+        self.page.client_storage.set("usuario_metodo", metodo)
+        
         self.page.session.set("usuario_activo", email)
         self.page.session.set("usuario_nombre", nombre)
         self.page.session.set("usuario_metodo", metodo)
+        
         self.page.go("/dashboard")

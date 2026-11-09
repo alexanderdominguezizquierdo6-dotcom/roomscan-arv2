@@ -23,23 +23,27 @@ def main(page: ft.Page):
         os.makedirs("assets")
 
     def route_change(route):
-        if page.route != "/" and not page.session.get("usuario_activo"):
+        # Usar client_storage y session en conjunto para evitar pérdida de sesión al usar hardware externo
+        usuario_activo = page.client_storage.get("usuario_activo") or page.session.get("usuario_activo")
+
+        # Permitir la ruta /geo o /scan sin patear al login si viene de la captura de hardware
+        if page.route != "/" and not usuario_activo and not page.route.startswith("/geo") and not page.route.startswith("/scan"):
             page.go("/")
             return
 
-        if page.route == "/dashboard":
+        if page.route.startswith("/dashboard"):
             body_container.content = DashboardView(page)
             app_bar.visible = True
-        elif page.route == "/scan":
+        elif page.route.startswith("/scan"):
             body_container.content = ScanView(page)
             app_bar.visible = True
-        elif page.route == "/geo":
+        elif page.route.startswith("/geo"):
             body_container.content = GeoView(page)
             app_bar.visible = True
-        elif page.route == "/export":
+        elif page.route.startswith("/export"):
             body_container.content = ExportView(page)
             app_bar.visible = True
-        elif page.route == "/settings":
+        elif page.route.startswith("/settings"):
             body_container.content = SettingsView(page)
             app_bar.visible = True
         else:
@@ -123,9 +127,9 @@ def main(page: ft.Page):
         page.update()
 
     def abrir_perfil_modal(e):
-        email = page.session.get("usuario_activo") or "invitado@roomscan.ar"
-        nombre = page.session.get("usuario_nombre") or "Usuario Registrado"
-        metodo = page.session.get("usuario_metodo") or "Autenticación Local"
+        email = page.client_storage.get("usuario_activo") or page.session.get("usuario_activo") or "invitado@roomscan.ar"
+        nombre = page.client_storage.get("usuario_nombre") or page.session.get("usuario_nombre") or "Usuario Registrado"
+        metodo = page.client_storage.get("usuario_metodo") or page.session.get("usuario_metodo") or "Autenticación Local"
 
         def cerrar_perfil(ev):
             profile_dlg.open = False
@@ -133,6 +137,7 @@ def main(page: ft.Page):
 
         def logout(ev):
             profile_dlg.open = False
+            page.client_storage.remove("usuario_activo")
             page.session.clear()
             page.go("/")
 
