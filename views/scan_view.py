@@ -5,42 +5,117 @@ class ScanView(ft.Container):
         super().__init__()
         self.page = page
         self.expand = True
-        self.padding = 20
+        self.padding = 15
         self.bgcolor = "#0B0F19"
-        
+
+        # Componente HTML embebido directamente en la interfaz de Flet para mostrar la cámara y el GPS en vivo
+        visor_ar_html = ft.Html(
+            html="""
+            <div style="background: #111827; border: 1px solid #0e7490; border-radius: 12px; padding: 12px; text-align: center; color: white; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #38bdf8; font-family: monospace; margin-bottom: 6px;">
+                        <span>● ESCANEO ACTIVO (AR)</span>
+                        <span>90° Muro Detección</span>
+                    </div>
+                    <video id="webcam" autoplay playsinline muted style="width: 100%; height: 180px; background: #000; border-radius: 8px; object-fit: cover;"></video>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin: 8px 0;">
+                    <button onclick="activarCamaraReal()" style="flex: 1; background: #00f2fe; color: #000; border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        📷 Encender Cámara
+                    </button>
+                    <button onclick="obtenerGPSReal()" style="flex: 1; background: #38bdf8; color: #000; border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        🛰️ Obtener GPS
+                    </button>
+                </div>
+
+                <div id="status-box" style="font-family: monospace; font-size: 11px; color: #facc15; background: #1E293B; padding: 6px; border-radius: 6px; text-align: left; word-break: break-all;">
+                    Estado: Listo para activar sensores.
+                </div>
+            </div>
+
+            <script>
+                let gpsData = { lat: 18.334703, lon: -93.206845 };
+
+                async function activarCamaraReal() {
+                    const video = document.getElementById('webcam');
+                    const statusBox = document.getElementById('status-box');
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: { ideal: "environment" } },
+                            audio: false
+                        });
+                        video.srcObject = stream;
+                        await video.play();
+                        statusBox.innerHTML = "¡Cámara trasera activa en tiempo real!";
+                        statusBox.style.color = "#4ade80";
+                    } catch (err) {
+                        statusBox.innerHTML = "Error de cámara: " + err.message;
+                        statusBox.style.color = "#f87171";
+                    }
+                }
+
+                function obtenerGPSReal() {
+                    const statusBox = document.getElementById('status-box');
+                    if (!navigator.geolocation) {
+                        statusBox.innerHTML = "GPS no soportado.";
+                        statusBox.style.color = "#f87171";
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            gpsData.lat = pos.coords.latitude;
+                            gpsData.lon = pos.coords.longitude;
+                            const acc = pos.coords.accuracy.toFixed(1);
+                            statusBox.innerHTML = `GPS OK -> Lat: ${gpsData.lat.toFixed(4)} | Lon: ${gpsData.lon.toFixed(4)} (±${acc}m)`;
+                            statusBox.style.color = "#4ade80";
+                        },
+                        (err) => {
+                            statusBox.innerHTML = "Error GPS: " + err.message;
+                            statusBox.style.color = "#f87171";
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                }
+            </script>
+            """,
+            expand=True
+        )
+
         self.content = ft.Column([
             ft.Row([
                 ft.IconButton(icon=ft.icons.ARROW_BACK, icon_color=ft.colors.CYAN_ACCENT, on_click=lambda _: self.page.go("/dashboard")),
-                ft.Text("Escaneo AR y Sensores en Vivo", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                ft.Text("Escaneo AR y Medición en Vivo", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
             ]),
-            ft.Container(
-                expand=True,
-                bgcolor="#111827",
-                border_radius=12,
-                border=ft.border.all(1, ft.colors.CYAN_900),
-                padding=25,
-                alignment=ft.alignment.center,
-                content=ft.Column([
-                    ft.Icon(ft.icons.CAMERA_ALT, size=56, color=ft.colors.CYAN_ACCENT),
-                    ft.Text("Módulo de Realidad Aumentada y GPS", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
-                    ft.Text("Abre el visor optimizado para activar la cámara trasera y capturar la geolocalización satelital real.", size=12, color=ft.colors.GREY_400, text_align=ft.TextAlign.CENTER),
-                    ft.Divider(height=15, color=ft.colors.TRANSPARENT),
-                    ft.ElevatedButton(
-                        text="🚀 Abrir Visor de Hardware en Vivo",
-                        color=ft.colors.BLACK,
-                        bgcolor=ft.colors.CYAN_ACCENT,
-                        height=48,
-                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-                        on_click=lambda _: self.page.launch_url("/index.html")
-                    )
-                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER)
-            ),
+            
+            # Contenedor principal que aloja el visor web en la app
+            ft.Container(expand=True, content=visor_ar_html),
+
+            # Métricas estimadas según la propuesta
+            ft.Row([
+                ft.Container(
+                    expand=True, bgcolor="#111827", padding=10, border_radius=8, border=ft.border.all(1, ft.colors.CYAN_900),
+                    content=ft.Column([
+                        ft.Text("15.24 m²", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.CYAN_ACCENT),
+                        ft.Text("ÁREA CALCULADA", size=10, color=ft.colors.GREY_400)
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                ),
+                ft.Container(
+                    expand=True, bgcolor="#111827", padding=10, border_radius=8, border=ft.border.all(1, ft.colors.CYAN_900),
+                    content=ft.Column([
+                        ft.Text("41.06 m³", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.CYAN_ACCENT),
+                        ft.Text("VOLUMEN ESTIMADO", size=10, color=ft.colors.GREY_400)
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                ),
+            ], spacing=10),
+
             ft.ElevatedButton(
-                text="Continuar a Geolocalización y Registro ➔",
+                text="Capturar y Geolocalizar Inmueble ➔",
                 color=ft.colors.BLACK,
-                bgcolor=ft.colors.CYAN_400,
+                bgcolor=ft.colors.CYAN_ACCENT,
                 height=45,
-                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                width=float("inf"),
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
                 on_click=lambda _: self.page.go("/geo")
             )
-        ], expand=True, spacing=12)
+        ], expand=True, spacing=10)
