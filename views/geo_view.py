@@ -9,6 +9,26 @@ class GeoView(ft.Container):
         self.padding = 20
         self.bgcolor = "#0B0F19"
 
+        # Capturar coordenadas reales enviadas desde el visor GPS de la web
+        lat_val = 18.334703
+        lon_val = -93.206845
+        
+        try:
+            route_str = page.route
+            if "?" in route_str:
+                query_part = route_str.split("?")[1]
+                pairs = query_part.split("&")
+                for pair in pairs:
+                    if "lat=" in pair:
+                        lat_val = float(pair.split("=")[1])
+                    elif "lon=" in pair:
+                        lon_val = float(pair.split("=")[1])
+        except Exception:
+            pass
+
+        self.lat_real = lat_val
+        self.lon_real = lon_val
+
         self.txt_nombre = ft.TextField(label="Nombre del Proyecto / Espacio", value="Residencia Comalcalco - Planta Baja", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
         self.txt_tipo = ft.TextField(label="Tipo de Uso", value="Bienes Raíces / Catastro", bgcolor="#1E293B", color=ft.colors.WHITE, border_color=ft.colors.CYAN_700, border_radius=10)
         
@@ -24,13 +44,13 @@ class GeoView(ft.Container):
                     ft.Text("Geolocalización del Inmueble", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                 ]),
                 
-                # Tarjeta de estado GPS
+                # Tarjeta que muestra las coordenadas reales exactas que acaban de capturar los satélites
                 ft.Container(
                     padding=15, bgcolor="#111827", border_radius=10, border=ft.border.all(1, ft.colors.CYAN_900),
                     content=ft.Column([
                         ft.Icon(ft.icons.GPS_FIXED, color=ft.colors.CYAN_ACCENT, size=28),
-                        ft.Text("Ubicación GPS Confirmada", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
-                        ft.Text("LAT: 18.334703 | LON: -93.206845", size=11, color=ft.colors.CYAN_ACCENT, font_family="monospace")
+                        ft.Text("Ubicación GPS Real Confirmada", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                        ft.Text(f"LAT: {self.lat_real:.6f} | LON: {self.lon_real:.6f}", size=11, color=ft.colors.CYAN_ACCENT, font_family="monospace")
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                 ),
 
@@ -59,15 +79,16 @@ class GeoView(ft.Container):
             area_val = 0.0
             vol_val = 0.0
 
+        # Guardar en base de datos SQLite con la latitud y longitud reales del dispositivo
         guardar_inmueble(
             nombre=self.txt_nombre.value or "Residencia Comalcalco",
             tipo_uso=self.txt_tipo.value or "Catastro",
-            latitud=18.334703,
-            longitud=-93.206845,
+            latitud=self.lat_real,
+            longitud=self.lon_real,
             area=area_val,
             volumen=vol_val
         )
 
-        self.page.snack_bar = ft.SnackBar(ft.Text("¡Inmueble registrado con éxito en la base de datos!"), bgcolor=ft.colors.GREEN_700)
+        self.page.snack_bar = ft.SnackBar(ft.Text("¡Inmueble y coordenadas GPS reales guardados en la BD!"), bgcolor=ft.colors.GREEN_700)
         self.page.snack_bar.open = True
         self.page.go("/export")

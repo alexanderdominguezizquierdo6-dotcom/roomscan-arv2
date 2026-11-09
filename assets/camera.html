@@ -3,117 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor de Cámara Real</title>
+    <title>RoomScan AR - Cámara Real</title>
     <style>
         * { box-sizing: border-box; }
         body {
             margin: 0;
             background: #0B0F19;
             color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             overflow: hidden;
+            padding: 15px;
         }
-        #video-container {
-            position: relative;
+        .container {
             width: 100%;
+            max-width: 420px;
             height: 100%;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .controls {
-            position: absolute;
-            bottom: 30px;
-            width: 90%;
-            max-width: 400px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            z-index: 20;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+        video, canvas {
+            width: 100%;
+            height: 60vh;
+            background: #000;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid #0e7490;
+        }
+        canvas { display: none; }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         button {
             background: #00f2fe;
             color: #000;
             border: none;
-            padding: 16px;
-            font-size: 16px;
+            padding: 14px;
+            font-size: 15px;
             font-weight: bold;
             border-radius: 12px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
         }
-        .btn-secondary {
-            background: #1E293B;
-            color: #fff;
-            box-shadow: none;
-        }
+        .btn-sec { background: #1E293B; color: #fff; box-shadow: none; }
+        .btn-success { background: #4ade80; display: none; }
         #status-log {
-            background: rgba(15, 23, 42, 0.9);
+            background: #1E293B;
             border: 1px solid #334155;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 11px;
             color: #38bdf8;
-            display: none;
+            font-family: monospace;
+            text-align: left;
             word-break: break-all;
         }
     </style>
 </head>
 <body>
-    <div id="video-container">
+    <div class="container">
+        <h3 style="color: #00f2fe; margin: 0; text-align: center; font-size: 16px;">📷 Visor AR - Cámara Trasera</h3>
+        
         <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="snapshot"></canvas>
+
+        <div id="status-log">Estado: Esperando permisos de hardware...</div>
+
         <div class="controls">
-            <div id="status-log"></div>
-            <button id="btn-start" onclick="initCam()">📷 Abrir Cámara del Celular</button>
-            <button class="btn-secondary" onclick="window.location.href='/'">Volver a la App</button>
+            <button id="btn-start" onclick="initCam()">Encender Cámara</button>
+            <button id="btn-capture" class="btn-success" onclick="capturarFoto()">Capturar Entorno y Continuar ➔</button>
+            <button class="btn-sec" onclick="window.location.href='/scan'">Volver a la App</button>
         </div>
     </div>
 
     <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('snapshot');
+        const log = document.getElementById('status-log');
+        const btnStart = document.getElementById('btn-start');
+        const btnCapture = document.getElementById('btn-capture');
+        let mediaStream = null;
+
         async function initCam() {
-            const video = document.getElementById('webcam');
-            const btn = document.getElementById('btn-start');
-            const log = document.getElementById('status-log');
-
-            log.style.display = 'block';
-            log.innerText = "Solicitando permisos de cámara al sistema operativo...";
-
+            log.innerText = "Solicitando acceso a la cámara trasera del dispositivo...";
             try {
-                // Intentar primero cámara trasera, si falla usar cualquier cámara disponible
-                let stream;
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: { ideal: "environment" } },
-                        audio: false
-                    });
-                } catch (e) {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                }
-
-                video.srcObject = stream;
+                // Forzar la cámara trasera en dispositivos móviles (iPhone / Android)
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: "environment" } },
+                    audio: false
+                });
+                video.srcObject = mediaStream;
                 await video.play();
                 
                 log.style.color = "#4ade80";
-                log.innerText = "¡Cámara activa en vivo!";
-                btn.style.display = 'none';
+                log.innerText = "¡Cámara activa en tiempo real!";
+                btnStart.style.display = 'none';
+                btnCapture.style.display = 'block';
             } catch (err) {
                 console.error(err);
                 log.style.color = "#f87171";
-                log.innerHTML = "<b>Error al abrir cámara:</b> " + err.message + 
-                    "<br><br><b>Solución:</b> Revisa los permisos de tu navegador en Ajustes > Privacidad > Cámara.";
-                btn.innerText = "Reintentar";
+                log.innerText = "Error de cámara: " + err.message + ". Asegúrate de dar permisos en Safari/Chrome.";
             }
+        }
+
+        function capturarFoto() {
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            log.style.color = "#4ade80";
+            log.innerText = "¡Captura realizada con éxito! Redirigiendo a GPS...";
+            
+            setTimeout(() => {
+                window.location.href = '/geo.html';
+            }, 1000);
         }
     </script>
 </body>

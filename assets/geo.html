@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS Real</title>
+    <title>RoomScan AR - GPS Real</title>
     <style>
         body {
             margin: 0;
@@ -37,6 +37,7 @@
             font-size: 13px;
             color: #38bdf8;
             text-align: left;
+            word-break: break-all;
         }
         button {
             background: #00f2fe;
@@ -48,30 +49,37 @@
             width: 100%;
             cursor: pointer;
             margin-top: 8px;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
         }
-        .btn-sec { background: #1E293B; color: #fff; }
+        .btn-sec { background: #1E293B; color: #fff; box-shadow: none; }
+        .btn-save { background: #4ade80; display: none; }
         #status { font-size: 12px; color: #facc15; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="box">
-        <h3>🛰️ Conexión GPS Satelital</h3>
-        <div id="status">Presiona el botón para autorizar la lectura de tu GPS real.</div>
+        <h3>🛰️ Geolocalización Satelital</h3>
+        <div id="status">Presiona el botón para autorizar el acceso al GPS de tu celular.</div>
         
         <div class="data" id="output">
-            Latitud: ---<br>
-            Longitud: ---<br>
+            Latitud: Pendiente<br>
+            Longitud: Pendiente<br>
             Precisión: ---
         </div>
 
-        <button onclick="getGPS()">📍 Capturar Mi Ubicación Real</button>
-        <button class="btn-sec" onclick="window.location.href='/'">Volver a la App</button>
+        <button onclick="getGPS()">📍 Obtener Coordenadas Reales</button>
+        <button id="btn-enviar" class="btn-save" onclick="guardarYContinuar()">Enviar a la App de Flet ➔</button>
+        <button class="btn-sec" onclick="window.location.href='/scan'">Volver a la App</button>
     </div>
 
     <script>
+        let latReal = 18.334703;
+        let lonReal = -93.206845;
+
         function getGPS() {
             const status = document.getElementById('status');
             const output = document.getElementById('output');
+            const btnEnviar = document.getElementById('btn-enviar');
 
             if (!navigator.geolocation) {
                 status.innerText = "Error: Geolocalización no soportada en este navegador.";
@@ -79,26 +87,36 @@
                 return;
             }
 
-            status.innerText = "Solicitando coordenadas exactas al chip GPS...";
+            status.innerText = "Conectando con satélites GPS (Alta precisión)...";
             status.style.color = "#facc15";
 
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    status.innerText = "¡Ubicación Satelital Confirmada!";
+                    latReal = pos.coords.latitude;
+                    lonReal = pos.coords.longitude;
+                    const acc = pos.coords.accuracy.toFixed(1);
+
+                    status.innerText = "¡Ubicación Real Obtenida con Éxito!";
                     status.style.color = "#4ade80";
                     output.innerHTML = `
-                        <b>Latitud:</b> ${pos.coords.latitude.toFixed(6)}<br>
-                        <b>Longitud:</b> ${pos.coords.longitude.toFixed(6)}<br>
-                        <b>Precisión:</b> ±${pos.coords.accuracy.toFixed(1)} metros
+                        <b>Latitud:</b> ${latReal.toFixed(6)}<br>
+                        <b>Longitud:</b> ${lonReal.toFixed(6)}<br>
+                        <b>Precisión:</b> ±${acc} metros
                     `;
+                    btnEnviar.style.display = 'block';
                 },
                 (err) => {
-                    status.innerText = "Error al obtener ubicación.";
+                    status.innerText = "Error al obtener GPS.";
                     status.style.color = "#f87171";
-                    output.innerHTML = `<b>Mensaje:</b> ${err.message}<br><br><i>Asegúrate de permitir la ubicación en la barra de direcciones de tu navegador.</i>`;
+                    output.innerHTML = `<b>Mensaje:</b> ${err.message}<br><br><i>Verifica que tu iPhone permita la ubicación en Ajustes > Privacidad.</i>`;
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
+        }
+
+        function guardarYContinuar() {
+            // Envía las coordenadas reales capturadas directamente a la ruta de Flet /geo
+            window.location.href = `/geo?lat=${latReal}&lon=${lonReal}`;
         }
     </script>
 </body>
