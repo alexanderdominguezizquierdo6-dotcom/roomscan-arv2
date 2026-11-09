@@ -58,7 +58,6 @@ def main(page: ft.Page):
         confirm_dlg.open = False
         page.update()
         
-        # En iPhone (iOS) Apple bloquea descargas directas de .ipa; mostramos la instalación PWA fluida
         if platform == "iOS":
             dlg_ios = ft.AlertDialog(
                 title=ft.Text("Instalar en tu iPhone", color=ft.colors.CYAN_ACCENT, weight=ft.FontWeight.BOLD),
@@ -78,7 +77,6 @@ def main(page: ft.Page):
             page.update()
             return
 
-        # Para Android, Windows y macOS
         ext_map = {
             "Android": "roomscan_ar_installer.apk",
             "Windows": "roomscan_ar_installer.exe",
