@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomScan AR - Web Real</title>
+    <title>RoomScan AR - Escaneo Activo</title>
     <style>
         body {
             margin: 0;
@@ -15,66 +15,72 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
         }
         .container {
             width: 100%;
-            max-width: 450px;
+            max-width: 420px;
             background: #111827;
             border: 1px solid #0e7490;
             border-radius: 16px;
-            padding: 20px;
+            padding: 18px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             text-align: center;
         }
-        h2 { color: #00f2fe; margin-top: 0; font-size: 18px; }
+        h2 { color: #00f2fe; margin-top: 0; font-size: 16px; }
         video {
             width: 100%;
-            height: 250px;
+            height: 220px;
             background: #000;
             border-radius: 10px;
             object-fit: cover;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         button {
             background-color: #00f2fe;
             color: #000;
             border: none;
-            padding: 14px;
-            font-size: 15px;
+            padding: 12px;
+            font-size: 14px;
             font-weight: bold;
             border-radius: 10px;
             cursor: pointer;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .btn-gps { background-color: #38bdf8; }
+        .btn-save { background-color: #4ade80; margin-top: 10px; }
         .log-box {
             background: #1E293B;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
             color: #facc15;
             text-align: left;
-            margin-top: 10px;
+            margin-top: 8px;
             word-break: break-all;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>📷 RoomScan AR - Visor Web</h2>
+        <h2>📷 RoomScan AR - Escaneo Real</h2>
         <video id="webcam" autoplay playsinline muted></video>
         
         <button onclick="activarCamara()">Encender Cámara Trasera</button>
         <button class="btn-gps" onclick="obtenerGPS()">Capturar GPS Real</button>
         
-        <div class="log-box" id="status-log">Estado: Listo para conectar hardware.</div>
+        <div class="log-box" id="status-log">Estado: Hardware listo para activar.</div>
+
+        <!-- Botón para pasar a la vista de guardado en Flet -->
+        <button class="btn-save" onclick="irARegistro()">Continuar a Guardar Inmueble ➔</button>
     </div>
 
     <script>
+        let datosGPS = { lat: 0.0, lon: 0.0 };
+
         function log(msg, color = "#facc15") {
             const box = document.getElementById('status-log');
             box.style.color = color;
@@ -94,7 +100,7 @@
                 log("¡Cámara activa en tiempo real!", "#4ade80");
             } catch (err) {
                 console.error(err);
-                log("Error de cámara: " + err.message + "<br>Verifica permisos en el navegador.", "#f87171");
+                log("Error de cámara: " + err.message, "#f87171");
             }
         }
 
@@ -106,10 +112,10 @@
             }
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    const lat = pos.coords.latitude.toFixed(6);
-                    const lon = pos.coords.longitude.toFixed(6);
+                    datosGPS.lat = pos.coords.latitude;
+                    datosGPS.lon = pos.coords.longitude;
                     const acc = pos.coords.accuracy.toFixed(1);
-                    log(`<b>¡GPS Obtenido!</b><br>Lat: ${lat}<br>Lon: ${lon}<br>Precisión: ±${acc}m`, "#4ade80");
+                    log(`<b>¡GPS Obtenido!</b><br>Lat: ${datosGPS.lat.toFixed(6)}<br>Lon: ${datosGPS.lon.toFixed(6)} (±${acc}m)`, "#4ade80");
                 },
                 (err) => {
                     console.error(err);
@@ -117,6 +123,11 @@
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
+        }
+
+        function irARegistro() {
+            // Redirige a la vista de geo en la app pasando las coordenadas obtenidas por URL
+            window.location.href = `/geo?lat=${datosGPS.lat}&lon=${datosGPS.lon}`;
         }
     </script>
 </body>
