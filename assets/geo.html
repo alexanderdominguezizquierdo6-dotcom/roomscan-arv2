@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomScan AR - GPS en Tiempo Real</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0B0F19;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card {
+            background-color: #111827;
+            border: 1px solid #0e7490;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h2 { color: #00f2fe; margin-top: 0; font-size: 20px; }
+        .coord-box {
+            background: #1E293B;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            color: #38bdf8;
+        }
+        button {
+            background-color: #00f2fe;
+            color: #000;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-back {
+            background-color: #1E293B;
+            color: #fff;
+            margin-top: 10px;
+        }
+        #status { font-size: 13px; color: #facc15; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🛰️ Geolocalización GPS Real</h2>
+        <div id="status">Esperando permiso de ubicación...</div>
+        
+        <div class="coord-box" id="coords-display">
+            Latitud: Buscando señal...<br>
+            Longitud: Buscando señal...<br>
+            Precisión: -
+        </div>
+
+        <button onclick="requestGPS()">Actualizar Posición GPS</button>
+        <button class="btn-back" onclick="window.location.href='/'">Volver a la App</button>
+    </div>
+
+    <script>
+        function requestGPS() {
+            const statusDiv = document.getElementById('status');
+            const coordsDiv = document.getElementById('coords-display');
+
+            if (!navigator.geolocation) {
+                statusDiv.innerText = "Tu navegador no soporta geolocalización.";
+                statusDiv.style.color = "#ff4d4d";
+                return;
+            }
+
+            statusDiv.innerText = "Por favor, acepta el aviso de permiso de GPS...";
+            
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const acc = position.coords.accuracy;
+
+                    statusDiv.innerText = "¡GPS Activo en Tiempo Real!";
+                    statusDiv.style.color = "#4ade80";
+
+                    coordsDiv.innerHTML = `
+                        Latitud: ${lat.toFixed(6)}<br>
+                        Longitud: ${lon.toFixed(6)}<br>
+                        Precisión: ±${acc.toFixed(1)} metros
+                    `;
+                },
+                (error) => {
+                    console.error(error);
+                    statusDiv.innerText = "Permiso denegado o error GPS: " + error.message;
+                    statusDiv.style.color = "#ff4d4d";
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 10000
+                }
+            );
+        }
+
+        window.onload = requestGPS;
+    </script>
+</body>
+</html>

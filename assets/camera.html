@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomScan AR - Cámara en Vivo</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0B0F19;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .overlay-ui {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 90%;
+            max-width: 400px;
+            z-index: 10;
+        }
+        button {
+            background-color: #00f2fe;
+            color: #000;
+            border: none;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+        }
+        .btn-back {
+            background-color: #1E293B;
+            color: #fff;
+            box-shadow: none;
+        }
+        #error-box {
+            background: rgba(255, 77, 77, 0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="camera-stream" autoplay playsinline muted></video>
+        <div class="overlay-ui">
+            <div id="error-box"></div>
+            <button id="btn-activate" onclick="startCamera()">📷 Permitir y Activar Cámara Trasera</button>
+            <button class="btn-back" onclick="window.location.href='/'">Volver a la App</button>
+        </div>
+    </div>
+
+    <script>
+        async function startCamera() {
+            const video = document.getElementById('camera-stream');
+            const errorBox = document.getElementById('error-box');
+            const btnActivate = document.getElementById('btn-activate');
+            
+            errorBox.style.display = 'none';
+            btnActivate.innerText = "Solicitando permisos...";
+
+            try {
+                // Solicitar explícitamente la cámara trasera del dispositivo móvil
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: "environment" } },
+                    audio: false
+                }).catch(() => {
+                    return navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "environment" },
+                        audio: false
+                    });
+                });
+
+                video.srcObject = stream;
+                await video.play();
+                btnActivate.style.display = 'none'; // Ocultar botón una vez encendida la cámara real
+            } catch (err) {
+                console.error("Error de cámara:", err);
+                errorBox.style.display = 'block';
+                errorBox.innerHTML = "<b>No se pudo abrir la cámara:</b> " + err.message + "<br><br>Verifica que diste permisos en los Ajustes de tu navegador o Safari.";
+                btnActivate.innerText = "Reintentar Activar Cámara";
+            }
+        }
+    </script>
+</body>
+</html>
